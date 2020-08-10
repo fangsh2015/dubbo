@@ -203,6 +203,7 @@ public class AdaptiveClassCodeGenerator {
         if (adaptiveAnnotation == null) {
             return generateUnsupported(method);
         } else {
+            // 查询标注@Adaptive注解的方法参数中URL参数所在的位置
             int urlTypeIndex = getUrlTypeIndex(method);
 
             // found parameter in URL type
@@ -211,6 +212,7 @@ public class AdaptiveClassCodeGenerator {
                 code.append(generateUrlNullCheck(urlTypeIndex));
             } else {
                 // did not find parameter in URL type
+                // 方法参数中没有找到URL参数，则参数对象中是否有ULRL参数，如果没有URL参数则Adaptive方法不成立，抛异常
                 code.append(generateUrlAssignmentIndirectly(method));
             }
 

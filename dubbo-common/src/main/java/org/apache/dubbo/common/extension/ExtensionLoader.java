@@ -670,14 +670,16 @@ public class ExtensionLoader<T> {
         return getExtensionClasses().containsKey(name);
     }
 
-    private T injectExtension(T instance) {
 
+    private T injectExtension(T instance) {
+        // 从IOC容器中为扩展类进行依赖注入
         if (objectFactory == null) {
             return instance;
         }
 
         try {
             for (Method method : instance.getClass().getMethods()) {
+                // 检测是否有set方法，有set方法且仅一个参数，访问级别为public类型则判定为有依赖对象
                 if (!isSetter(method)) {
                     continue;
                 }
@@ -687,15 +689,19 @@ public class ExtensionLoader<T> {
                 if (method.getAnnotation(DisableInject.class) != null) {
                     continue;
                 }
+                // 获取需要注入对象的类型
                 Class<?> pt = method.getParameterTypes()[0];
                 if (ReflectUtils.isPrimitives(pt)) {
                     continue;
                 }
 
                 try {
+                    // 获取需要注入的对象名称
                     String property = getSetterProperty(method);
+                    // 从IOC容器中获取依赖对象
                     Object object = objectFactory.getExtension(pt, property);
                     if (object != null) {
+                        // 通过放射set方法注入依赖对象
                         method.invoke(instance, object);
                     }
                 } catch (Exception e) {
@@ -752,8 +758,10 @@ public class ExtensionLoader<T> {
     }
 
     private Map<String, Class<?>> getExtensionClasses() {
+        // 从缓存中获取扩展类
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) {
+            // 缓存中为空，锁双重判定刷新缓存
             synchronized (cachedClasses) {
                 classes = cachedClasses.get();
                 if (classes == null) {
@@ -772,7 +780,7 @@ public class ExtensionLoader<T> {
         cacheDefaultExtensionName();
 
         Map<String, Class<?>> extensionClasses = new HashMap<>();
-
+        // 三个添dubbo扩展文件的:[META-INF/dubbo/internal/]、[META-INF/dubbo/]、[META-INF/services/]
         for (LoadingStrategy strategy : strategies) {
             loadDirectory(extensionClasses, strategy.directory(), type.getName(), strategy.preferExtensionClassLoader(), strategy.overridden(), strategy.excludedPackages());
             loadDirectory(extensionClasses, strategy.directory(), type.getName().replace("org.apache", "com.alibaba"), strategy.preferExtensionClassLoader(), strategy.overridden(), strategy.excludedPackages());
@@ -785,6 +793,7 @@ public class ExtensionLoader<T> {
      * extract and cache default extension name if exists
      */
     private void cacheDefaultExtensionName() {
+        // dubbo的SPI扩展接口必须添加@SIPI注解
         final SPI defaultAnnotation = type.getAnnotation(SPI.class);
         if (defaultAnnotation == null) {
             return;
@@ -910,8 +919,10 @@ public class ExtensionLoader<T> {
 
             String[] names = NAME_SEPARATOR.split(name);
             if (ArrayUtils.isNotEmpty(names)) {
+                // 存储名称到Class的Activate映射表中
                 cacheActivateClass(clazz, names[0]);
                 for (String n : names) {
+                    // 存储名称到Class的映射表中
                     cacheName(clazz, n);
                     saveInExtensionClass(extensionClasses, clazz, n, overridden);
                 }

@@ -35,6 +35,7 @@
         <module>dubbo-demo-xml</module>
         <module>dubbo-demo-annotation</module>
         <module>dubbo-demo-api</module>
+        <module>dubbo-demo-spi</module>
     </modules>
 
     <dependencyManagement>
@@ -45,6 +46,12 @@
                 <version>${project.parent.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-common</artifactId>
+                <version>${project.parent.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
