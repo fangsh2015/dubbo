@@ -11,4 +11,11 @@ public class Bumblebee implements Robot {
     public void sayHello(URL name) {
         System.out.println("大家好，我是大黄蜂");
     }
+
+    /**
+     * 扩展接口依赖接口编程，如果方法不是接口中的方法则可能无法使用到， 特别是有扩展包装类的时候
+     */
+    public void bumblebee() {
+        System.out.println("正宗暖男大黄蜂");
+    }
 }

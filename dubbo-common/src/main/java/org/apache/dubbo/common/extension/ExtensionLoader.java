@@ -87,6 +87,9 @@ public class ExtensionLoader<T> {
 
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<>(64);
 
+    /**
+     * 扩展接口的扩展类实例对象缓存 key：扩展类的类对象， value：扩展类的实例对象
+     */
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<>(64);
 
     private final Class<?> type;
@@ -100,6 +103,9 @@ public class ExtensionLoader<T> {
      */
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<>();
 
+    /**
+     * activate扩展类的缓存
+     */
     private final Map<String, Object> cachedActivates = new ConcurrentHashMap<>();
     /**
      * 扩展接口实例的名称与holder对象的缓存
@@ -113,6 +119,9 @@ public class ExtensionLoader<T> {
     private String cachedDefaultName;
     private volatile Throwable createAdaptiveInstanceError;
 
+    /**
+     * 扩展接口的包装类集合
+     */
     private Set<Class<?>> cachedWrapperClasses;
 
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<>();
@@ -297,11 +306,13 @@ public class ExtensionLoader<T> {
                     activateExtensions.add(getExtension(name));
                 }
             }
+            // 激活的扩展接口进行排序，排序依据为Activate注解中的order属性
             activateExtensions.sort(ActivateComparator.COMPARATOR);
         }
         List<T> loadedExtensions = new ArrayList<>();
         for (int i = 0; i < names.size(); i++) {
             String name = names.get(i);
+            // 通过"-"开头的配置明确指定不激活的扩展实现，直接就忽略了
             if (!name.startsWith(REMOVE_VALUE_PREFIX)
                     && !names.contains(REMOVE_VALUE_PREFIX + name)) {
                 if (DEFAULT_KEY.equals(name)) {
@@ -315,6 +326,7 @@ public class ExtensionLoader<T> {
             }
         }
         if (!loadedExtensions.isEmpty()) {
+            // 按照顺序，将自定义的扩展添加到默认扩展集合后面
             activateExtensions.addAll(loadedExtensions);
         }
         return activateExtensions;
@@ -442,8 +454,9 @@ public class ExtensionLoader<T> {
             synchronized (holder) {
                 instance = holder.get();
                 if (instance == null) {
-                    // 创建扩展对象
+                    // 创建扩展类实例对象
                     instance = createExtension(name, wrap);
+                    // 缓存扩展类实例对象
                     holder.set(instance);
                 }
             }
@@ -642,24 +655,30 @@ public class ExtensionLoader<T> {
 
     @SuppressWarnings("unchecked")
     private T createExtension(String name, boolean wrap) {
+        // 查询扩展实例的类对象
         Class<?> clazz = getExtensionClasses().get(name);
         if (clazz == null) {
             throw findException(name);
         }
         try {
+            // 扩展接口的实例缓存中获取对应的实例对象
             T instance = (T) EXTENSION_INSTANCES.get(clazz);
             if (instance == null) {
+                // 如果缓存不存在，则通过反射创建一个扩展类实例，添加到缓存中
                 EXTENSION_INSTANCES.putIfAbsent(clazz, clazz.newInstance());
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
+
+            // 注入扩展类实例对象依赖的其他扩展类对象
             injectExtension(instance);
 
-
+            // 允许包装扩展类
             if (wrap) {
-
                 List<Class<?>> wrapperClassesList = new ArrayList<>();
                 if (cachedWrapperClasses != null) {
                     wrapperClassesList.addAll(cachedWrapperClasses);
+                    // 对包装类进行排序
+                    // 排序的依据为 @see{@link Activate}注解的order参数
                     wrapperClassesList.sort(WrapperComparator.COMPARATOR);
                     Collections.reverse(wrapperClassesList);
                 }
@@ -667,14 +686,18 @@ public class ExtensionLoader<T> {
                 if (CollectionUtils.isNotEmpty(wrapperClassesList)) {
                     for (Class<?> wrapperClass : wrapperClassesList) {
                         Wrapper wrapper = wrapperClass.getAnnotation(Wrapper.class);
+                        // 判断包装类是否实现了@see{@link Wrapper}注解，该注解用来匹配需要包装的对象
+                        // 该注解的类必须要是扩展接口的包装类，必须满足包装类的条件
                         if (wrapper == null
                                 || (ArrayUtils.contains(wrapper.matches(), name) && !ArrayUtils.contains(wrapper.mismatches(), name))) {
+                            // 装饰器模式，将需要包装的对象实例修改为包装类的实例，实现类功能的增强 （instance更新为包装类实例）
                             instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
                         }
                     }
                 }
             }
 
+            // 扩展类是否实现了@see{@link Lifecycle}接口，如果实现了， 则在这里调用initialize方法
             initExtension(instance);
             return instance;
         } catch (Throwable t) {
@@ -690,6 +713,7 @@ public class ExtensionLoader<T> {
 
     private T injectExtension(T instance) {
         // 从IOC容器中为扩展类进行依赖注入
+        // @see{@link ExtensionFactory}
         if (objectFactory == null) {
             return instance;
         }
@@ -782,8 +806,9 @@ public class ExtensionLoader<T> {
             synchronized (cachedClasses) {
                 classes = cachedClasses.get();
                 if (classes == null) {
-                    // 加载扩展类实例
+                    // 加载扩展类的类对象
                     classes = loadExtensionClasses();
+                    // 保存扩展类名称与类对象关联
                     cachedClasses.set(classes);
                 }
             }
@@ -795,6 +820,7 @@ public class ExtensionLoader<T> {
      * synchronized in getExtensionClasses
      */
     private Map<String, Class<?>> loadExtensionClasses() {
+        // 缓存SPI注解中的默认扩展类。如果spi注解配置了默认的扩展类
         cacheDefaultExtensionName();
 
         Map<String, Class<?>> extensionClasses = new HashMap<>();
@@ -929,10 +955,16 @@ public class ExtensionLoader<T> {
 
         // 扩展类是否包含@Adaptive注解注解，如果有该注解，则为扩展接口的适配器类
         if (clazz.isAnnotationPresent(Adaptive.class)) {
+            // 缓存扩展接口的适配类 overridden：是否允许优先级高的配置文件中的适配类覆盖优先级低的适配类
+            // 扩展接口的适配类只有一个 @see{@link AdaptiveExtensionFactory}
             cacheAdaptiveClass(clazz, overridden);
+        // 判断扩展类是否为扩展接口的包装类，当类中有扩展接口为入参的构造方法时，判定该类为包装类
+        // 扩展接口的包装类允许有多个
         } else if (isWrapperClass(clazz)) {
+            // 添加扩展接口的包装类对象
             cacheWrapperClass(clazz);
         } else {
+            // 获取扩展类的公共无参构造方法，如果不存在该构造方法则抛异常
             clazz.getConstructor();
             if (StringUtils.isEmpty(name)) {
                 name = findAnnotationName(clazz);
@@ -943,11 +975,13 @@ public class ExtensionLoader<T> {
 
             String[] names = NAME_SEPARATOR.split(name);
             if (ArrayUtils.isNotEmpty(names)) {
+                // 先判断扩展类是否实现了@Activate注解， 如果实现了则将扩展类对象添加到扩展接口的Activate类缓存中
                 // 存储名称到Class的Activate映射表中
                 cacheActivateClass(clazz, names[0]);
                 for (String n : names) {
-                    // 存储名称到Class的映射表中
+                    // 存储扩展类对象与扩展类名称关系到缓存
                     cacheName(clazz, n);
+                    // 存储扩展类名与扩展类关系， 并且判断是否允许高优先级的配置覆盖低优先级的配置
                     saveInExtensionClass(extensionClasses, clazz, n, overridden);
                 }
             }
