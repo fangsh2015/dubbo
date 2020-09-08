@@ -79,24 +79,56 @@ public abstract class AbstractRegistry implements Registry {
     // Log output
     protected final Logger logger = LoggerFactory.getLogger(getClass());
     // Local disk cache, where the special key value.registries records the list of registry centers, and the others are the list of notified service providers
+    /**
+     * 加载到内存的缓存对象， 由url中的file.cache参数配置，是否开启缓存，如果开启，则将file中的KV保存到properties，缓存到内存
+     * 缓存的内容为：K：当前节点作为Consumer的一个URL；V：改Consumer对应的Provider列表
+     * 其中有一个特殊的KV， K为注册中心registies: V 为注册中心列表
+     */
     private final Properties properties = new Properties();
     // File cache timing writing
+    /**
+     * 异步缓存数据的线程池（单线程）。当syncSaveFile为false时，该线程池异步保存数据到文件中
+     */
     private final ExecutorService registryCacheExecutor = Executors.newFixedThreadPool(1, new NamedThreadFactory("DubboSaveRegistryCache", true));
     // Is it synchronized to save the file
+    /**
+     * 是否同步保存文件配置 url中的saave.file参数
+     */
     private boolean syncSaveFile;
+    /**
+     * 注册数据的版本号， 每次写file全覆盖， 通过版本号防止旧数据覆盖新数据
+     */
     private final AtomicLong lastCacheChanged = new AtomicLong();
     private final AtomicInteger savePropertiesRetryTimes = new AtomicInteger();
     private final Set<URL> registered = new ConcurrentHashSet<>();
+    /**
+     * 订阅的URL监听集合
+     */
     private final ConcurrentMap<URL, Set<NotifyListener>> subscribed = new ConcurrentHashMap<>();
+
+    /**
+     * 保存了consumer与其provider的关系
+     * URL为当前节点某个consumer的url
+     * Map#Key是provider URL中的分类Category；Map#Value则为当前分类下所有provider的URL
+     * provider的默认category为：provider
+     */
     private final ConcurrentMap<URL, Map<String, List<URL>>> notified = new ConcurrentHashMap<>();
+    /**
+     * 创建该Registry对象的全部配置信息， AbstractRegistryFactory修改后的url
+     */
     private URL registryUrl;
     // Local disk cache file
+    /**
+     * 本地file文件缓存，
+     */
     private File file;
+
 
     public AbstractRegistry(URL url) {
         setUrl(url);
         if (url.getParameter(REGISTRY__LOCAL_FILE_CACHE_ENABLED, true)) {
             // Start file save timer
+            // 加载provider的缓存文件
             syncSaveFile = url.getParameter(REGISTRY_FILESAVE_SYNC_KEY, false);
             String defaultFilename = System.getProperty("user.home") + "/.dubbo/dubbo-registry-" + url.getParameter(APPLICATION_KEY) + "-" + url.getAddress().replaceAll(":", "-") + ".cache";
             String filename = url.getParameter(FILE_KEY, defaultFilename);
@@ -112,6 +144,7 @@ public abstract class AbstractRegistry implements Registry {
             this.file = file;
             // When starting the subscription center,
             // we need to read the local cache file for future Registry fault tolerance processing.
+            // 加载本地缓存的订阅url容错方案，避免网络抖动时，无法从注册中心查询到订阅的url可以从本地获取url。
             loadProperties();
             notify(url.getBackupUrls());
         }
@@ -301,6 +334,12 @@ public abstract class AbstractRegistry implements Registry {
         registered.remove(url);
     }
 
+    /**
+     * url设置监听
+     * @param url      Subscription condition, not allowed to be empty, e.g. consumer://10.20.153.10/org.apache.dubbo.foo.BarService?version=1.0.0&application=kylin
+     * @param listener A listener of the change event, not allowed to be empty
+     * listener变更后会通知url
+     */
     @Override
     public void subscribe(URL url, NotifyListener listener) {
         if (url == null) {
@@ -386,7 +425,7 @@ public abstract class AbstractRegistry implements Registry {
 
     /**
      * Notify changes from the Provider side.
-     *
+     * 提供服务的节点发生变更，通过该方法通知订阅其的consumer
      * @param url      consumer side url
      * @param listener listener
      * @param urls     provider latest urls
@@ -409,7 +448,15 @@ public abstract class AbstractRegistry implements Registry {
         // keep every provider's category.
         Map<String, List<URL>> result = new HashMap<>();
         for (URL u : urls) {
+            /*
+            consumer的url是否与变更的provicer的u想匹配， 匹配规则：
+            匹配 Consumer 和 Provider 的接口（优先取 interface 参数，其次再取 path）。双方接口相同或者其中一方为“*”，则匹配成功，执行下一步。
+            匹配 Consumer 和 Provider 的 category。
+            检测 Consumer URL 和 Provider URL 中的 enable 参数是否符合条件。
+            检测 Consumer 和 Provider 端的 group、version 以及 classifier 是否符合条件。
+             */
             if (UrlUtils.isMatch(url, u)) {
+
                 String category = u.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
                 List<URL> categoryList = result.computeIfAbsent(category, k -> new ArrayList<>());
                 categoryList.add(u);
@@ -426,10 +473,15 @@ public abstract class AbstractRegistry implements Registry {
             listener.notify(categoryList);
             // We will update our cache file after each notification.
             // When our Registry has a subscribe failure due to network jitter, we can return at least the existing cache URL.
+            // 缓存更新的url
             saveProperties(url);
         }
     }
 
+    /**
+     * 缓存url作为consumer的provider对应的url到properties内存中，以及缓存文件中
+     * @param url
+     */
     private void saveProperties(URL url) {
         if (file == null) {
             return;
@@ -448,11 +500,14 @@ public abstract class AbstractRegistry implements Registry {
                     }
                 }
             }
+            // 缓存到内存
             properties.setProperty(url.getServiceKey(), buf.toString());
             long version = lastCacheChanged.incrementAndGet();
             if (syncSaveFile) {
+                // 同步缓存到文件
                 doSaveProperties(version);
             } else {
+                // 异步缓存到文件
                 registryCacheExecutor.execute(new SaveProperties(version));
             }
         } catch (Throwable t) {
