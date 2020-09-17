@@ -38,7 +38,7 @@ import static org.apache.dubbo.rpc.Constants.ACTIVES_KEY;
  *      If there are more than configured (in this example 2) is trying to invoke remote method, then rest of invocation
  *      will wait for configured timeout(default is 0 second) before invocation gets kill by dubbo.
  * </pre>
- *
+ * 客户端线程方式限流方案
  * @see Filter
  */
 @Activate(group = CONSUMER, value = ACTIVES_KEY)
@@ -50,6 +50,7 @@ public class ActiveLimitFilter implements Filter, Filter.Listener {
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         URL url = invoker.getUrl();
         String methodName = invocation.getMethodName();
+        // actives 设置客户端允许发起请求的最大并发线程数。实现方案与服务端限流方式一样
         int max = invoker.getUrl().getMethodParameter(methodName, ACTIVES_KEY, 0);
         final RpcStatus rpcStatus = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName());
         if (!RpcStatus.beginCount(url, methodName, max)) {

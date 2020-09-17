@@ -34,11 +34,16 @@ import static org.apache.dubbo.rpc.Constants.DEFAULT_TPS_LIMIT_INTERVAL;
  */
 public class DefaultTPSLimiter implements TPSLimiter {
 
+    /**
+     * 服务接口对应其限流的容器
+     */
     private final ConcurrentMap<String, StatItem> stats = new ConcurrentHashMap<String, StatItem>();
 
     @Override
     public boolean isAllowable(URL url, Invocation invocation) {
+        // 限流数
         int rate = url.getParameter(TPS_LIMIT_RATE_KEY, -1);
+        // 限流间隔
         long interval = url.getParameter(TPS_LIMIT_INTERVAL_KEY, DEFAULT_TPS_LIMIT_INTERVAL);
         String serviceKey = url.getServiceKey();
         if (rate > 0) {

@@ -32,17 +32,47 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RpcStatus {
 
+    /**
+     * dubbo服务对应的rpc请求统计 key：dubbl服务的url
+     */
     private static final ConcurrentMap<String, RpcStatus> SERVICE_STATISTICS = new ConcurrentHashMap<String, RpcStatus>();
 
+    /**
+     * dubbo服务具体方法对应的rpc请求统计 key：dubbl服务的url
+     */
     private static final ConcurrentMap<String, ConcurrentMap<String, RpcStatus>> METHOD_STATISTICS = new ConcurrentHashMap<String, ConcurrentMap<String, RpcStatus>>();
     private final ConcurrentMap<String, Object> values = new ConcurrentHashMap<String, Object>();
+    /**
+     * 当前活跃的rpc请求
+     */
     private final AtomicInteger active = new AtomicInteger();
+    /**
+     * 总共的请求量
+     */
     private final AtomicLong total = new AtomicLong();
+    /**
+     * 总共失败的请求量
+     */
     private final AtomicInteger failed = new AtomicInteger();
+    /**
+     * 总共请求的时间
+     */
     private final AtomicLong totalElapsed = new AtomicLong();
+    /**
+     * 总共失败的请求时间
+     */
     private final AtomicLong failedElapsed = new AtomicLong();
+    /**
+     * 最大耗时
+     */
     private final AtomicLong maxElapsed = new AtomicLong();
+    /**
+     * 失败最大耗时
+     */
     private final AtomicLong failedMaxElapsed = new AtomicLong();
+    /**
+     * 成功最大耗时
+     */
     private final AtomicLong succeededMaxElapsed = new AtomicLong();
 
     private RpcStatus() {
@@ -96,20 +126,26 @@ public class RpcStatus {
      */
     public static boolean beginCount(URL url, String methodName, int max) {
         max = (max <= 0) ? Integer.MAX_VALUE : max;
+        // 单个服务的请求统计
         RpcStatus appStatus = getStatus(url);
+        // 服务对应方法的请求统计
         RpcStatus methodStatus = getStatus(url, methodName);
         if (methodStatus.active.get() == Integer.MAX_VALUE) {
             return false;
         }
         for (int i; ; ) {
+            // 拿出服务方法当前请求数
             i = methodStatus.active.get();
+            // 当前请求数超过最大设置数，返回false，拒绝请求
             if (i + 1 > max) {
                 return false;
             }
+            //服务方法当前请求数 + 1，成功则跳出循环，如果失败则可能存在并发情况，则自旋自增知道成功统计
             if (methodStatus.active.compareAndSet(i, i + 1)) {
                 break;
             }
         }
+        // 接口请求数自增
         appStatus.active.incrementAndGet();
         return true;
     }

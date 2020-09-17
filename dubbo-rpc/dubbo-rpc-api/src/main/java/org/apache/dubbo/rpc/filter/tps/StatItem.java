@@ -42,6 +42,13 @@ class StatItem {
         this.token = buildLongAdder(rate);
     }
 
+    /**
+     * 令牌桶的限流方式，在规定的时间间隔内，设置允许请求的数量，当数量超过最大允许数量则限流
+     * 超过一个规定的时间间隔，则会重置令牌桶的令牌数
+     * 有个疑问：如果请求时间较长，超过限流的时间间隔，则可能请求的数量超过令牌桶内最大的令牌数。
+     * 应该结合服务的超时时间，再合理设置服务的时间间隔
+     * @return
+     */
     public boolean isAllowable() {
         long now = System.currentTimeMillis();
         if (now > lastResetTime + interval) {
