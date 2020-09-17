@@ -34,7 +34,7 @@ public interface Exchanger {
 
     /**
      * bind.
-     *
+     * dubbo服务
      * @param url
      * @param handler
      * @return message server
@@ -44,7 +44,7 @@ public interface Exchanger {
 
     /**
      * connect.
-     *
+     * dubbo客户端
      * @param url
      * @param handler
      * @return message channel

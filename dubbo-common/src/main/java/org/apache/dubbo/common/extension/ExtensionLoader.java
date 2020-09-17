@@ -1092,10 +1092,17 @@ public class ExtensionLoader<T> {
     }
 
     private Class<?> getAdaptiveExtensionClass() {
+        // 加载扩展类，同时会将包含Adaptive注解的类缓存到cacheAdaptiveClass中
         getExtensionClasses();
+        // 判断扩展类是否有Adaptive注解的类
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
         }
+        // 扩展的类没有Adaptive注解的适配类，则程序自动生成自适应的适配类
+        /*
+            通过SPI获取对应的扩展类， 然后调用被Adaptive注解的方法
+            Dubbo 不会为没有标注 Adaptive 注解的方法生成代理逻辑，对于该种类型的方法，仅会生成一句抛出异常的代码
+         */
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
 

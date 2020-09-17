@@ -192,7 +192,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
         checkAndUpdateSubConfigs();
 
-        //init serviceMetadata
+        //init serviceMetadata初始化元数据
         serviceMetadata.setVersion(getVersion());
         serviceMetadata.setGroup(getGroup());
         serviceMetadata.setDefaultGroup(getGroup());
@@ -203,9 +203,10 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         if (shouldDelay()) {
             DELAY_EXPORT_EXECUTOR.schedule(this::doExport, getDelay(), TimeUnit.MILLISECONDS);
         } else {
+            // 暴露服务
             doExport();
         }
-
+        // 分发服务暴露成功事件
         exported();
     }
 
@@ -302,8 +303,11 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
+        // 获取全局唯一的服务仓库，将注册的服务保存在ServiceRepository里面
         ServiceRepository repository = ApplicationModel.getServiceRepository();
+        // 保存注册的服务
         ServiceDescriptor serviceDescriptor = repository.registerService(getInterfaceClass());
+        // 保存注册的服务提供者
         repository.registerProvider(
                 getUniqueServiceName(),
                 ref,
@@ -312,8 +316,14 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                 serviceMetadata
         );
 
+        /*
+          一个服务的url = 注册中心（一个服务可以注册到多个中心|有多个地址） * 服务提供者的协议（一个服务可以暴露为多个协议）
+         */
+
+        // 以注册配置<registry>获取需要注册服务的URL（dubbo总线）
         List<URL> registryURLs = ConfigValidationUtils.loadRegistries(this, true);
 
+        // 以服务协议<protocol>获取需要注册的服务URL
         for (ProtocolConfig protocolConfig : protocols) {
             String pathKey = URL.buildKey(getContextPath(protocolConfig)
                     .map(p -> p + "/" + path)
@@ -326,6 +336,11 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         }
     }
 
+    /**
+     * 将服务按照不同的服务协议进行暴露
+     * @param protocolConfig
+     * @param registryURLs
+     */
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
         String name = protocolConfig.getName();
         if (StringUtils.isEmpty(name)) {
@@ -348,6 +363,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         if (metadataReportConfig != null && metadataReportConfig.isValid()) {
             map.putIfAbsent(METADATA_KEY, REMOTE_METADATA_STORAGE_TYPE);
         }
+        // 处理接口中方法<dubbo:method>配置
         if (CollectionUtils.isNotEmpty(getMethods())) {
             for (MethodConfig method : getMethods()) {
                 AbstractConfig.appendParameters(map, method, method.getName());
@@ -413,6 +429,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                 map.put(REVISION_KEY, revision);
             }
 
+            // 校验接口中是否有方法
             String[] methods = Wrapper.getWrapper(interfaceClass).getMethodNames();
             if (methods.length == 0) {
                 logger.warn("No method found in service interface " + interfaceClass.getName());

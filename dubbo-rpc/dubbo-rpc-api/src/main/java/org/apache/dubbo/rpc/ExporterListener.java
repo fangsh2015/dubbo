@@ -29,7 +29,7 @@ public interface ExporterListener {
      *
      * @param exporter
      * @throws RpcException
-     * @see org.apache.dubbo.rpc.Protocol#export(Invoker)
+     * @see org.apache.dubbo.rpc.Protocol#export(Invoker)ExporterListener
      */
     void exported(Exporter<?> exporter) throws RpcException;
 

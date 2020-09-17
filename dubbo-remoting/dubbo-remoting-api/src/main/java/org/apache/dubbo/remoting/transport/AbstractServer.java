@@ -172,6 +172,7 @@ public abstract class AbstractServer extends AbstractEndpoint implements Remotin
             return;
         }
 
+        // dubbo服务端tcp限流，限制服务端连接数， 用来限制客户端的连接数达到限流的效果
         Collection<Channel> channels = getChannels();
         if (accepts > 0 && channels.size() > accepts) {
             logger.error("Close channel " + ch + ", cause: The server " + ch.getLocalAddress() + " connections greater than max config " + accepts);
