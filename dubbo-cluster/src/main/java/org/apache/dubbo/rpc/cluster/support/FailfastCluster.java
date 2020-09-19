@@ -23,6 +23,7 @@ import org.apache.dubbo.rpc.cluster.support.wrapper.AbstractCluster;
 /**
  * {@link FailfastClusterInvoker}
  *
+ * 快速失败容错策略。只发起一次调用， 失败立即报错。【非幂等性的写操作,(防止重复提交)】
  */
 public class FailfastCluster extends AbstractCluster {
 

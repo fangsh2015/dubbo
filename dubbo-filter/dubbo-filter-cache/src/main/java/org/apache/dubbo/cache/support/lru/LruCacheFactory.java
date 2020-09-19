@@ -27,6 +27,7 @@ import org.apache.dubbo.common.URL;
  * @see AbstractCacheFactory
  * @see LruCache
  * @see Cache
+ * 最近最少使用原则缓存，保持最热的数据被缓存。 缺点，计算强度大
  */
 public class LruCacheFactory extends AbstractCacheFactory {
 

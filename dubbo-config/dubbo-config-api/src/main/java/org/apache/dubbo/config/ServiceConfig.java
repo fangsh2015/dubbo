@@ -137,6 +137,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
     /**
      * The exported services
+     * 因为一个服务可以根据多个协议，以及向多个注册中心进行暴露，因此这里是个列表
      */
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
 
@@ -181,6 +182,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
     }
 
     public synchronized void export() {
+        // 判断服务是否暴露 通过 export参数进行配置
         if (!shouldExport()) {
             return;
         }
@@ -200,7 +202,9 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         serviceMetadata.setServiceInterfaceName(getInterface());
         serviceMetadata.setTarget(getRef());
 
+        // 延迟暴露 设置delay参数，判断服务是否延迟暴露
         if (shouldDelay()) {
+            // 通过定时线程池的方式，实现延迟服务暴露
             DELAY_EXPORT_EXECUTOR.schedule(this::doExport, getDelay(), TimeUnit.MILLISECONDS);
         } else {
             // 暴露服务
@@ -420,6 +424,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             } // end of methods for
         }
 
+        // 处理dubbo泛化调用GenericService
         if (ProtocolUtils.isGeneric(generic)) {
             map.put(GENERIC_KEY, generic);
             map.put(METHODS_KEY, ANY_VALUE);
@@ -441,6 +446,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
         /**
          * Here the token value configured by the provider is used to assign the value to ServiceConfig#token
+         * 服务调用的时候进行token的校验
          */
         if(ConfigUtils.isEmpty(token) && provider != null) {
             token = provider.getToken();
@@ -457,11 +463,13 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         serviceMetadata.getAttachments().putAll(map);
 
         // export service
+        // 查找本地ip， port
         String host = findConfigedHosts(protocolConfig, registryURLs, map);
         Integer port = findConfigedPorts(protocolConfig, name, map);
         URL url = new URL(name, host, port, getContextPath(protocolConfig).map(p -> p + "/" + path).orElse(path), map);
 
         // You can customize Configurator to append extra parameters
+        // 自定义配置工厂，使用自定义的配置，更新dubbo服务的url（通过修改服务暴露的url，添加配置， 或者修改dubob中服务的配置）
         if (ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
                 .hasExtension(url.getProtocol())) {
             url = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
@@ -473,18 +481,22 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         if (!SCOPE_NONE.equalsIgnoreCase(scope)) {
 
             // export to local if the config is not remote (export to remote only when config is remote)
+            // 本地服务暴露
             if (!SCOPE_REMOTE.equalsIgnoreCase(scope)) {
                 exportLocal(url);
             }
             // export to remote if the config is not local (export to local only when config is local)
+            // 远程服务暴露
             if (!SCOPE_LOCAL.equalsIgnoreCase(scope)) {
                 if (CollectionUtils.isNotEmpty(registryURLs)) {
+                    // 将dubbo服务发布到不同的注册中心
                     for (URL registryURL : registryURLs) {
                         //if protocol is only injvm ,not register
                         if (LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {
                             continue;
                         }
                         url = url.addParameterIfAbsent(DYNAMIC_KEY, registryURL.getParameter(DYNAMIC_KEY));
+                        // 添加监控中心的配置
                         URL monitorUrl = ConfigValidationUtils.loadMonitor(this, registryURL);
                         if (monitorUrl != null) {
                             url = url.addParameterAndEncoded(MONITOR_KEY, monitorUrl.toFullString());
@@ -503,6 +515,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                             registryURL = registryURL.addParameter(PROXY_KEY, proxy);
                         }
 
+                        // 将暴露的服务封装成Invoker
                         Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(EXPORT_KEY, url.toFullString()));
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
@@ -535,6 +548,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
     @SuppressWarnings({"unchecked", "rawtypes"})
     /**
      * always export injvm
+     * 同一个JVM进程中进行本地服务暴露，
      */
     private void exportLocal(URL url) {
         URL local = URLBuilder.from(url)
@@ -542,8 +556,10 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                 .setHost(LOCALHOST_VALUE)
                 .setPort(0)
                 .build();
+        // 将本地服务 封装成invoker 在再封装成Exporter
         Exporter<?> exporter = PROTOCOL.export(
                 PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, local));
+        // 保存需要暴露在本地的服务Exporter
         exporters.add(exporter);
         logger.info("Export dubbo service " + interfaceClass.getName() + " to local registry url : " + local);
     }

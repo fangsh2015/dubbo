@@ -51,6 +51,7 @@ public class ActiveLimitFilter implements Filter, Filter.Listener {
         URL url = invoker.getUrl();
         String methodName = invocation.getMethodName();
         // actives 设置客户端允许发起请求的最大并发线程数。实现方案与服务端限流方式一样
+        // 该参数还用来对服务请求的负载均衡策略（LeastActiveLoadBalance）
         int max = invoker.getUrl().getMethodParameter(methodName, ACTIVES_KEY, 0);
         final RpcStatus rpcStatus = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName());
         if (!RpcStatus.beginCount(url, methodName, max)) {

@@ -23,6 +23,7 @@ import org.apache.dubbo.rpc.cluster.support.wrapper.AbstractCluster;
 /**
  * {@link ForkingClusterInvoker}
  *
+ * 并行调用多个服务器，只要一个成功即返回 【实时性要求较高的读操作】 预缓存这种热标记
  */
 public class ForkingCluster extends AbstractCluster {
 

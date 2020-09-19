@@ -34,6 +34,7 @@ import static org.apache.dubbo.common.constants.CommonConstants.COMMA_SPLIT_PATT
 
 /**
  * ConsistentHashLoadBalance
+ * 一致性hash负载策略
  */
 public class ConsistentHashLoadBalance extends AbstractLoadBalance {
     public static final String NAME = "consistenthash";
@@ -66,7 +67,9 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
     }
 
     private static final class ConsistentHashSelector<T> {
-
+        /**
+         * 虚拟节点
+         */
         private final TreeMap<Long, Invoker<T>> virtualInvokers;
 
         private final int replicaNumber;

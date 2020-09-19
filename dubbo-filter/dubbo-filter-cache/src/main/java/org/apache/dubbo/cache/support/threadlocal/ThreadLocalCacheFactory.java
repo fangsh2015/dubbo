@@ -27,6 +27,9 @@ import org.apache.dubbo.common.URL;
  * @see AbstractCacheFactory
  * @see ThreadLocalCache
  * @see Cache
+ *
+ * 当前线程缓存。避免一个线程中多次查询。
+ * 细颗粒的控制数据的维度在一个业务请求周期内，不会超过其他线程数据范围
  */
 public class ThreadLocalCacheFactory extends AbstractCacheFactory {
 

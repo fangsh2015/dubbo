@@ -191,6 +191,13 @@ public class DubboProtocol extends AbstractProtocol {
                         .equals(NetUtils.filterLocalHost(address.getAddress().getHostAddress()));
     }
 
+    /**
+     * 通过客户端调用传入的Invocation找到具体调用的Invoker
+     * @param channel
+     * @param inv
+     * @return
+     * @throws RemotingException
+     */
     Invoker<?> getInvoker(Channel channel, Invocation inv) throws RemotingException {
         boolean isCallBackServiceInvoke = false;
         boolean isStubServiceInvoke = false;
@@ -245,7 +252,9 @@ public class DubboProtocol extends AbstractProtocol {
         exporterMap.put(key, exporter);
 
         //export an stub service for dispatching event
+        // 本地存根
         Boolean isStubSupportEvent = url.getParameter(STUB_EVENT_KEY, DEFAULT_STUB_EVENT);
+        // 参数回调
         Boolean isCallbackservice = url.getParameter(IS_CALLBACK_SERVICE, false);
         if (isStubSupportEvent && !isCallbackservice) {
             String stubServiceMethods = url.getParameter(STUB_EVENT_METHODS_KEY);
@@ -258,6 +267,7 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
 
+        // 开启服务端socket服务
         openServer(url);
         optimizeSerialization(url);
 
@@ -270,6 +280,9 @@ public class DubboProtocol extends AbstractProtocol {
         //client can export a service which's only for server to invoke
         boolean isServer = url.getParameter(IS_SERVER_KEY, true);
         if (isServer) {
+            // 进行了变更，之前版本直接返回ExchangeServer,现在将ExchangeServer封装在ProtocolServer中
+            // TODO: 2020/9/19 为什么要进行一层封装
+            // 一个服务端开启一个socket监听，如果当前的socket监听没有开启，则根据不同的网络协议（netty， mina等）创建一个
             ProtocolServer server = serverMap.get(key);
             if (server == null) {
                 synchronized (this) {

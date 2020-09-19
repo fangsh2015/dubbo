@@ -27,6 +27,8 @@ import java.util.Arrays;
  * @export
  * @see org.apache.dubbo.config.ProtocolConfig
  * @see ServiceConfigBase
+ *
+ * dubbo暴露服务的公共配置 <dubbo:provider></dubbo:provider>
  */
 public class ProviderConfig extends AbstractServiceConfig {
 

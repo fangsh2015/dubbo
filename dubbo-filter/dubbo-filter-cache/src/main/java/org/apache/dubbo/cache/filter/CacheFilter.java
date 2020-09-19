@@ -63,6 +63,7 @@ import static org.apache.dubbo.common.constants.FilterConstants.CACHE_KEY;
  * @see org.apache.dubbo.cache.support.expiring.ExpiringCacheFactory
  * @see org.apache.dubbo.cache.support.expiring.ExpiringCache
  *
+ * dubbo的缓存拦截器，如果缓存中有值，则直接获取缓存的值不进行RPC调用
  */
 @Activate(group = {CONSUMER, PROVIDER}, value = CACHE_KEY)
 public class CacheFilter implements Filter {
@@ -94,6 +95,7 @@ public class CacheFilter implements Filter {
         if (cacheFactory != null && ConfigUtils.isNotEmpty(invoker.getUrl().getMethodParameter(invocation.getMethodName(), CACHE_KEY))) {
             Cache cache = cacheFactory.getCache(invoker.getUrl(), invocation);
             if (cache != null) {
+                // 通过调用的参数获取缓存的key
                 String key = StringUtils.toArgumentString(invocation.getArguments());
                 Object value = cache.get(key);
                 if (value != null) {

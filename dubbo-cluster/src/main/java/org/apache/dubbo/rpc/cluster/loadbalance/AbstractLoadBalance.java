@@ -39,7 +39,9 @@ public abstract class AbstractLoadBalance implements LoadBalance {
     /**
      * Calculate the weight according to the uptime proportion of warmup time
      * the new weight will be within 1(inclusive) to weight(inclusive)
-     *
+     * 重新计算权重，通过之前设置的权重以及启动预热的时间
+     * 服务启动时处理能力应该是最弱的，例如缓存未充分，JVM未准备好等，此时的权重应该小于服务设置的真实权重
+     * dubbo认为服务启动的时间越长，准备的时间越充分，处理能力应该更强（此时的权重更接近设置的真实权重）
      * @param uptime the uptime in milliseconds
      * @param warmup the warmup time in milliseconds
      * @param weight the weight of an invoker
@@ -68,6 +70,7 @@ public abstract class AbstractLoadBalance implements LoadBalance {
      * Get the weight of the invoker's invocation which takes warmup time into account
      * if the uptime is within the warmup time, the weight will be reduce proportionally
      *
+     * 获取权重
      * @param invoker    the invoker
      * @param invocation the invocation of this invoker
      * @return weight

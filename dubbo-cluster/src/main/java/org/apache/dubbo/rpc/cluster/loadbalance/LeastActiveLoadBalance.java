@@ -31,6 +31,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * If there is only one invoker, use the invoker directly;
  * if there are multiple invokers and the weights are not the same, then random according to the total weight;
  * if there are multiple invokers and the same weight, then randomly called.
+ * 最少连接数负载策略
  */
 public class LeastActiveLoadBalance extends AbstractLoadBalance {
 
@@ -91,11 +92,13 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
                 }
             }
         }
-        // Choose an invoker from all the least active invokers
+        // Choose an invoker from all the least active invoker
+        // 最小连接数的invoker只有一个， 因此选取最小连接数的invoker
         if (leastCount == 1) {
             // If we got exactly one invoker having the least active value, return this invoker directly.
             return invokers.get(leastIndexes[0]);
         }
+        // 最小连接数相同， 权重不同， 则根据权重采用个随机负载的算法选取Invoker
         if (!sameWeight && totalWeight > 0) {
             // If (not every invoker has the same weight & at least one invoker's weight>0), select randomly based on 
             // totalWeight.
@@ -110,6 +113,7 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
             }
         }
         // If all invokers have the same weight value or totalWeight=0, return evenly.
+        // 最小连接数相同，且权重相同，随机取一个
         return invokers.get(leastIndexes[ThreadLocalRandom.current().nextInt(leastCount)]);
     }
 }

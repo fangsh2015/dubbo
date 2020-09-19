@@ -32,6 +32,8 @@ import javax.cache.spi.CachingProvider;
  * @see CachingProvider
  * @see javax.cache.Cache
  * @see javax.cache.CacheManager
+ *
+ * 桥接各种缓存实现
  */
 public class JCacheFactory extends AbstractCacheFactory {
 

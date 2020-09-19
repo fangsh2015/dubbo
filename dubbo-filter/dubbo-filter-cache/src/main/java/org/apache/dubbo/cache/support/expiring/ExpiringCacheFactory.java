@@ -28,6 +28,7 @@ import org.apache.dubbo.common.URL;
  * @see AbstractCacheFactory
  * @see ExpiringCache
  * @see Cache
+ * 指定过期时间。缺点，热点缓存过期时间一到就会被删除。
  */
 
 public class ExpiringCacheFactory extends AbstractCacheFactory {

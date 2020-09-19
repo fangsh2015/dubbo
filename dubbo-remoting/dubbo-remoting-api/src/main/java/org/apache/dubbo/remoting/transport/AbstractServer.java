@@ -163,6 +163,7 @@ public abstract class AbstractServer extends AbstractEndpoint implements Remotin
         return idleTimeout;
     }
 
+    // TODO: 2020/9/19 在哪里调用connected
     @Override
     public void connected(Channel ch) throws RemotingException {
         // If the server has entered the shutdown process, reject any new connection
