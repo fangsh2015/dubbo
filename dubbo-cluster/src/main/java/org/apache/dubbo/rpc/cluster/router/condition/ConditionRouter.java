@@ -259,28 +259,38 @@ public class ConditionRouter extends AbstractRouter {
     }
 
     protected static final class MatchPair {
+        /**
+         * 匹配白名单
+          */
         final Set<String> matches = new HashSet<String>();
+        /**
+         * 匹配的黑名单
+         */
         final Set<String> mismatches = new HashSet<String>();
 
         private boolean isMatch(String value, URL param) {
+            // 情况1. matches非空 mismatches为空
             if (!matches.isEmpty() && mismatches.isEmpty()) {
+                // 遍历matches集合， 检测入参value是否能被matches集合元素匹配到
                 for (String match : matches) {
                     if (UrlUtils.isMatchGlobPattern(match, value, param)) {
                         return true;
                     }
                 }
+                // 所有的匹配项都无法匹配入参
                 return false;
             }
-
+            // matches为空， mismatches非空
             if (!mismatches.isEmpty() && matches.isEmpty()) {
                 for (String mismatch : mismatches) {
+                    // 只要入参被 mismatches 集合中的任意一个元素匹配到，就返回 false
                     if (UrlUtils.isMatchGlobPattern(mismatch, value, param)) {
                         return false;
                     }
                 }
                 return true;
             }
-
+            // matches不为空， mismatches不为空
             if (!matches.isEmpty() && !mismatches.isEmpty()) {
                 //when both mismatches and matches contain the same value, then using mismatches first
                 for (String mismatch : mismatches) {
@@ -288,6 +298,7 @@ public class ConditionRouter extends AbstractRouter {
                         return false;
                     }
                 }
+
                 for (String match : matches) {
                     if (UrlUtils.isMatchGlobPattern(match, value, param)) {
                         return true;
@@ -295,6 +306,7 @@ public class ConditionRouter extends AbstractRouter {
                 }
                 return false;
             }
+            // matches为空， mismatches为空直接返回false
             return false;
         }
     }

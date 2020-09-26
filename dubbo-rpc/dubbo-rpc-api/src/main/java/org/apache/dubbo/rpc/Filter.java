@@ -41,7 +41,7 @@ import org.apache.dubbo.common.extension.SPI;
  * @see org.apache.dubbo.rpc.filter.TpsLimitFilter
  */
 @SPI
-public interface Filter {
+public interface  Filter {
     /**
      * Make sure call invoker.invoke() in your implementation.
      */

@@ -429,6 +429,7 @@ public class UrlUtils {
     }
 
     public static boolean isMatchGlobPattern(String pattern, String value) {
+        // 匹配表达是为* 则表示全部匹配， 返回true
         if ("*".equals(pattern)) {
             return true;
         }
@@ -438,12 +439,14 @@ public class UrlUtils {
         if (StringUtils.isEmpty(pattern) || StringUtils.isEmpty(value)) {
             return false;
         }
-
+        // 定位在通配符 * 的位置
         int i = pattern.lastIndexOf('*');
         // doesn't find "*"
+        // 匹配表达是没有找到通配符*则判断表达式是否与value相等
         if (i == -1) {
             return value.equals(pattern);
         }
+        // 通过通配符分隔表达式A*B，然后判断value是否以A开头，或者以B结尾
         // "*" is at the end
         else if (i == pattern.length() - 1) {
             return value.startsWith(pattern.substring(0, i));

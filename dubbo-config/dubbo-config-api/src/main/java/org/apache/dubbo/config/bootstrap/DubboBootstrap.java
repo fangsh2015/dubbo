@@ -897,7 +897,7 @@ public class DubboBootstrap extends GenericEventListener {
             if (logger.isInfoEnabled()) {
                 logger.info(NAME + " is starting...");
             }
-            // 1. export Dubbo Services
+            // 1. export Dubbo Services 服务端暴露服务
             exportServices();
 
             // Not only provider register
@@ -908,6 +908,7 @@ public class DubboBootstrap extends GenericEventListener {
                 registerServiceInstance();
             }
 
+            // 客户端服务refer
             referServices();
             if (asyncExportingFutures.size() > 0) {
                 new Thread(() -> {

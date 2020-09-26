@@ -46,7 +46,8 @@ public class Application {
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
-                .registry(new RegistryConfig("zookeeper://10.9.22.26:2182"))
+//                .registry(new RegistryConfig("zookeeper://10.9.22.26:2182"))
+                .registry(new RegistryConfig("zookeeper://127.0.0.1:2182"))
                 .service(service)
                 .start()
                 .await();

@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
  * @see org.apache.dubbo.remoting.Client
  * @see RemotingServer#getChannels()
  * @see RemotingServer#getChannel(InetSocketAddress)
+ * 对两个Endpoint连接的抽象。用来在两个Endpoint之间传输数据 （服务端往channel写数据， 客户端往channel读数据）
  */
 public interface Channel extends Endpoint {
 

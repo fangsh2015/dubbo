@@ -30,6 +30,7 @@ import java.util.List;
 
 /**
  * StaticDirectory
+ * 固定的服务目录，不会改变服务Invoker的内容
  */
 public class StaticDirectory<T> extends AbstractDirectory<T> {
     private static final Logger logger = LoggerFactory.getLogger(StaticDirectory.class);
@@ -66,12 +67,17 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
         return invokers;
     }
 
+    /**
+     * 检测当前目录下的invoker是否可用
+     * @return
+     */
     @Override
     public boolean isAvailable() {
         if (isDestroyed()) {
             return false;
         }
         for (Invoker<T> invoker : invokers) {
+            // 只要有一个invoker是可用的，整个目录就是可用的
             if (invoker.isAvailable()) {
                 return true;
             }

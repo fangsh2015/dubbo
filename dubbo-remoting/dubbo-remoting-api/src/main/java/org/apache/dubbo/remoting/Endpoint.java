@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
  * @see org.apache.dubbo.remoting.Channel
  * @see org.apache.dubbo.remoting.Client
  * @see RemotingServer
+ * 网络通信过程中抽象出来的端点概念。ip+port可以唯一确定一个端点
  */
 public interface Endpoint {
 

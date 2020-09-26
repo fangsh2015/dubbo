@@ -137,14 +137,21 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
         }
         String methodName = invocation == null ? StringUtils.EMPTY_STRING : invocation.getMethodName();
 
+        // dubbo粘滞性配置 <dubbo:reference sticky="true" />, <dubbo:method sticky="true" />
+        // 粘滞性配置可在接口以及方法两个级别配置， 粘滞性的配置主要是考虑有状态的服务连接情况
+        // 判断当前是否有粘滞连接，如果存在粘滞联系，且可用，则不进行invoker的负载选取
         boolean sticky = invokers.get(0).getUrl()
                 .getMethodParameter(methodName, CLUSTER_STICKY_KEY, DEFAULT_CLUSTER_STICKY);
 
         //ignore overloaded method
+        // 粘滞连接不为空，但是连接列表中不包含粘滞连接，可能粘滞连接对应的远程服务挂了， 将粘滞连接设为空
         if (stickyInvoker != null && !invokers.contains(stickyInvoker)) {
             stickyInvoker = null;
         }
         //ignore concurrency problem
+        // 在 sticky 为 true，且 stickyInvoker != null 的情况下。如果 selected 包含
+        // stickyInvoker，表明 stickyInvoker 对应的服务提供者可能因网络原因未能成功提供服务。
+        // 但是该提供者并没挂，此时 invokers 列表中仍存在该服务提供者对应的 Invoker。
         if (sticky && stickyInvoker != null && (selected == null || !selected.contains(stickyInvoker))) {
             if (availablecheck && stickyInvoker.isAvailable()) {
                 return stickyInvoker;
@@ -153,6 +160,7 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
 
         Invoker<T> invoker = doSelect(loadbalance, invocation, invokers, selected);
 
+        // 配置了粘滞连接， 将选取的服务提供invoker赋值给粘滞连接
         if (sticky) {
             stickyInvoker = invoker;
         }
@@ -168,12 +176,14 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
         if (invokers.size() == 1) {
             return invokers.get(0);
         }
+        // 选择负载均衡策略选取服务提供者invoker
         Invoker<T> invoker = loadbalance.select(invokers, getUrl(), invocation);
 
         //If the `invoker` is in the  `selected` or invoker is unavailable && availablecheck is true, reselect.
         if ((selected != null && selected.contains(invoker))
                 || (!invoker.isAvailable() && getUrl() != null && availablecheck)) {
             try {
+                // 如果选出的invoker不稳定或不可用， 则重选
                 Invoker<T> rInvoker = reselect(loadbalance, invocation, invokers, selected, availablecheck);
                 if (rInvoker != null) {
                     invoker = rInvoker;

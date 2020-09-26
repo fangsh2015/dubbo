@@ -24,6 +24,7 @@ import org.apache.dubbo.common.extension.SPI;
  *
  * @see org.apache.dubbo.remoting.Transporter#bind(org.apache.dubbo.common.URL, ChannelHandler)
  * @see org.apache.dubbo.remoting.Transporter#connect(org.apache.dubbo.common.URL, ChannelHandler)
+ * 注册在Channel上的消息处理器 （编解码， 半包处理）
  */
 @SPI
 public interface ChannelHandler {

@@ -189,7 +189,8 @@ public class ConfigValidationUtils {
                     List<URL> urls = UrlUtils.parseURLs(address, map);
 
                     for (URL url : urls) {
-
+                        // 设置dubb服务url的协议protocol设置为register， 在服务暴露的时候， 先走registry协议（eg:zookeeper）
+                        // 然后将dubbo服务配置的协议（eg:dubbo等）保存在url的参数registry中，等到dubbo服务注册成功后，在对服务进行相应协议的暴露
                         url = URLBuilder.from(url)
                                 .addParameter(REGISTRY_KEY, url.getProtocol())
                                 .setProtocol(extractRegistryType(url))
