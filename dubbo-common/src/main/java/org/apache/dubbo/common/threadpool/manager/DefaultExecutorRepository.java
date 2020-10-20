@@ -52,6 +52,10 @@ public class DefaultExecutorRepository implements ExecutorRepository {
 
     private ScheduledExecutorService reconnectScheduledExecutor;
 
+    /**
+     * 缓存已有的线程池。 第一层key表示线程池属于provider或者是consumer
+     * 第二层key 表示线程池关联服务的端口
+     */
     private ConcurrentMap<String, ConcurrentMap<Integer, ExecutorService>> data = new ConcurrentHashMap<>();
 
     public DefaultExecutorRepository() {
@@ -75,10 +79,12 @@ public class DefaultExecutorRepository implements ExecutorRepository {
         if (CONSUMER_SIDE.equalsIgnoreCase(url.getParameter(SIDE_KEY))) {
             componentKey = CONSUMER_SIDE;
         }
+        // 根据URL中的side参数，确定第一层的key
         Map<Integer, ExecutorService> executors = data.computeIfAbsent(componentKey, k -> new ConcurrentHashMap<>());
+        // 根据URL中的端口号确定第二层的key
         Integer portKey = url.getPort();
         ExecutorService executor = executors.computeIfAbsent(portKey, k -> createExecutor(url));
-        // If executor has been shut down, create a new one
+        // If executor has been shut down, create a new one 缓存中的线程池已经关闭， 则创建一个新的
         if (executor.isShutdown() || executor.isTerminated()) {
             executors.remove(portKey);
             executor = createExecutor(url);

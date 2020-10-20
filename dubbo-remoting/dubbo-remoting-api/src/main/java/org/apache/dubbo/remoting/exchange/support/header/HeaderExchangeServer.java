@@ -77,6 +77,11 @@ public class HeaderExchangeServer implements ExchangeServer {
         return server.isClosed();
     }
 
+    /**
+     * 检查client与当前Server维持的长连接
+     * 如果有一个长连接为有效状态， Server不应该被关闭
+     * @return
+     */
     private boolean isRunning() {
         Collection<Channel> channels = getChannels();
         for (Channel channel : channels) {
@@ -106,8 +111,10 @@ public class HeaderExchangeServer implements ExchangeServer {
             final long max = (long) timeout;
             final long start = System.currentTimeMillis();
             if (getUrl().getParameter(Constants.CHANNEL_SEND_READONLYEVENT_KEY, true)) {
+                // 向客户端发送一个ReadOnly事件
                 sendChannelReadOnlyEvent();
             }
+            // 等待client与该Server建立的长连接关闭，或者是超时
             while (HeaderExchangeServer.this.isRunning()
                     && System.currentTimeMillis() - start < max) {
                 try {
@@ -117,7 +124,9 @@ public class HeaderExchangeServer implements ExchangeServer {
                 }
             }
         }
+        // 将closed字段设置为ture, 并且取消CloseTimeTask任务
         doClose();
+        // 调用底层RemotingServer的close方法
         server.close(timeout);
     }
 

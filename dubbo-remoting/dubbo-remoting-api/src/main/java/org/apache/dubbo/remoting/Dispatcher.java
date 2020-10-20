@@ -23,6 +23,8 @@ import org.apache.dubbo.remoting.transport.dispatcher.all.AllDispatcher;
 
 /**
  * ChannelHandlerWrapper (SPI, Singleton, ThreadSafe)
+ * 服务派发，用于将服务端接收到的请求派发到相应的线程池中执行
+ * 具有派发功能的实现类为具体的ChannelHandler
  */
 @SPI(AllDispatcher.NAME)
 public interface Dispatcher {

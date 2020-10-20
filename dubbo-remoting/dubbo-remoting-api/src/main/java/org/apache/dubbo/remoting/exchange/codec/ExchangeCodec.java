@@ -82,6 +82,15 @@ public class ExchangeCodec extends TelnetCodec {
         return decode(channel, buffer, readable, header);
     }
 
+    /**
+     * 按照Dubbo协议对请求内容进行解码
+     * @param channel
+     * @param buffer
+     * @param readable
+     * @param header
+     * @return
+     * @throws IOException
+     */
     @Override
     protected Object decode(Channel channel, ChannelBuffer buffer, int readable, byte[] header) throws IOException {
         // check magic number.
@@ -212,29 +221,39 @@ public class ExchangeCodec extends TelnetCodec {
         // header.
         byte[] header = new byte[HEADER_LENGTH];
         // set magic number.
+        // 设置数组前两个字节中写入魔术
         Bytes.short2bytes(MAGIC, header);
 
         // set request and serialization flag.
+        // 设置协议中序列化标志位
         header[2] = (byte) (FLAG_REQUEST | serialization.getContentTypeId());
 
+        // 设置协议中way标志位
         if (req.isTwoWay()) {
             header[2] |= FLAG_TWOWAY;
         }
+        // 设置协议中事件标志位
         if (req.isEvent()) {
             header[2] |= FLAG_EVENT;
         }
 
         // set request id.
+        // 设置协议中的requestId
         Bytes.long2bytes(req.getId(), header, 4);
 
         // encode request data.
+        // 开始序列化请求， 并统计序列化后的字节数
         int savedWriteIndex = buffer.writerIndex();
+        // 将写入位置后移16个字节
         buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
+        // 根据配置的序列化方式，对请求进行序列化
         ChannelBufferOutputStream bos = new ChannelBufferOutputStream(buffer);
         ObjectOutput out = serialization.serialize(channel.getUrl(), bos);
         if (req.isEvent()) {
+            // 对事件请求进行序列化
             encodeEventData(channel, out, req.getData());
         } else {
+            // 对dubbo请求进行序列化
             encodeRequestData(channel, out, req.getData(), req.getVersion());
         }
         out.flushBuffer();
@@ -242,28 +261,40 @@ public class ExchangeCodec extends TelnetCodec {
             ((Cleanable) out).cleanup();
         }
         bos.flush();
-        bos.close();
+        bos.close(); // 完成序列化
         int len = bos.writtenBytes();
-        checkPayload(channel, len);
-        Bytes.int2bytes(len, header, 12);
+        checkPayload(channel, len); // 限制一下请求的字节长度
+        Bytes.int2bytes(len, header, 12); // 将字节数写入header数组中
 
         // write
+        // 调整channelBuffer写入位置， 将协议头写入buffer中
         buffer.writerIndex(savedWriteIndex);
         buffer.writeBytes(header); // write header.
+        // 最后，将ChannelBuffer的写入位置移动到正确的位置
         buffer.writerIndex(savedWriteIndex + HEADER_LENGTH + len);
     }
 
+    /**
+     * 按照dubbo协议对相应内容进行编码
+     * @param channel
+     * @param buffer
+     * @param res
+     * @throws IOException
+     */
     protected void encodeResponse(Channel channel, ChannelBuffer buffer, Response res) throws IOException {
         int savedWriteIndex = buffer.writerIndex();
         try {
             Serialization serialization = getSerialization(channel);
-            // header.
+
             byte[] header = new byte[HEADER_LENGTH];
             // set magic number.
+            // header. 在header数组前两个字节写入魔数
             Bytes.short2bytes(MAGIC, header);
             // set request and serialization flag.
+            // 根据当前使用的序列化设置协议头中序列化标志位
             header[2] = serialization.getContentTypeId();
             if (res.isHeartbeat()) {
+                // 设置事件标志
                 header[2] |= FLAG_EVENT;
             }
             // set response status.

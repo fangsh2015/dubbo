@@ -26,19 +26,36 @@ import static org.apache.dubbo.common.constants.CommonConstants.HEARTBEAT_EVENT;
  * Request.
  */
 public class Request {
-
+    /**
+     * 用于生成请求的自增ID，当递增到Long.MAX_VALUE之后，会溢出到Long.MIN_VALUE，我们可以继续使用该负数作为消息ID
+     */
     private static final AtomicLong INVOKE_ID = new AtomicLong(0);
-
+    /**
+     * 请求的消息id
+     */
     private final long mId;
-
+    /**
+     * 请求版本号
+     */
     private String mVersion;
-
+    /**
+     * 请求的双向标志， 如果该字段设置为true，则server端在收到请求后，需要给client返回一个响应
+     */
     private boolean mTwoWay = true;
-
+    /**
+     * 请求的事件标志， 心跳请求， 只读请求等都会带上这个标志
+     */
     private boolean mEvent = false;
 
+    /**
+     * 请求发送到server后，由decoder将二进制数据解码成请求对象Request，如果在解码过程中遇到异常，会设置该标志
+     * 将request交由其他的ChannelHandler根据该标志做进一步处理
+     */
     private boolean mBroken = false;
 
+    /**
+     * 消息的请求体，任意java对象，或者为null
+     */
     private Object mData;
 
     public Request() {

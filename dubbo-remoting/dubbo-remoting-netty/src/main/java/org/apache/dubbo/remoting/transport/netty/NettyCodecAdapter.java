@@ -125,6 +125,7 @@ final class NettyCodecAdapter {
                         input.toByteBuffer());
             }
 
+            // 拿到关联的Channel
             NettyChannel channel = NettyChannel.getOrAddChannel(ctx.getChannel(), url, handler);
             Object msg;
             int saveReaderIndex;
@@ -132,13 +133,17 @@ final class NettyCodecAdapter {
             try {
                 // decode object.
                 do {
+                    // 记录当前readerIndex的位置
                     saveReaderIndex = message.readerIndex();
                     try {
+                        // 委托给Codec2进行解码
                         msg = codec.decode(channel, message);
                     } catch (IOException e) {
                         buffer = org.apache.dubbo.remoting.buffer.ChannelBuffers.EMPTY_BUFFER;
                         throw e;
                     }
+                    // 当前接受到的数据不足一个消息长度， 返回 NEED_MORE_INPUT
+                    // 重置readerIndex，继续等待接收更多的数据
                     if (msg == Codec2.DecodeResult.NEED_MORE_INPUT) {
                         message.readerIndex(saveReaderIndex);
                         break;

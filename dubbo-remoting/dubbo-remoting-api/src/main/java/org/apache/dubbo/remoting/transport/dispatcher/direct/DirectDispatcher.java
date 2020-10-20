@@ -22,6 +22,7 @@ import org.apache.dubbo.remoting.Dispatcher;
 
 /**
  * Direct dispatcher
+ * 所有的事件处理， 网路连接，断开；Dubbo方法调用业务处理都在IO线程池中处理
  */
 public class DirectDispatcher implements Dispatcher {
 

@@ -22,6 +22,7 @@ import org.apache.dubbo.remoting.Dispatcher;
 
 /**
  * connect disconnect ensure the order
+ * 单独的业务线程处理网路的连接断开事件，与Dubbo的业务处理线程池分开
  */
 public class ConnectionOrderedDispatcher implements Dispatcher {
 

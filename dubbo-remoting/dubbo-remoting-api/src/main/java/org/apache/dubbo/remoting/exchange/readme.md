@@ -1,0 +1,2 @@
+# exchange
+exchange包定义了数据交换的规则，抽象了request, response两个概念，并添加了很多特性。是整个远程调用中非常核心的部分

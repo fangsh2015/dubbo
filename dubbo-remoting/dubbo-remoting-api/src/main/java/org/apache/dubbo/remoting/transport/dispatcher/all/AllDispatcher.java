@@ -22,6 +22,7 @@ import org.apache.dubbo.remoting.Dispatcher;
 
 /**
  * default thread pool configure
+ * 将所有的IO事件交给Dubbo的业务线程池执行，Dubbo默认的线程模型
  */
 public class AllDispatcher implements Dispatcher {
 

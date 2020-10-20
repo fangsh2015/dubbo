@@ -71,6 +71,7 @@ public abstract class AbstractProtocol implements Protocol {
 
     @Override
     public void destroy() {
+        // 销毁全部引用的服务
         for (Invoker<?> invoker : invokers) {
             if (invoker != null) {
                 invokers.remove(invoker);
@@ -84,6 +85,8 @@ public abstract class AbstractProtocol implements Protocol {
                 }
             }
         }
+
+        // 销毁全部暴露出去的服务
         for (String key : new ArrayList<String>(exporterMap.keySet())) {
             Exporter<?> exporter = exporterMap.remove(key);
             if (exporter != null) {

@@ -46,8 +46,17 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
 
     protected static final String CLIENT_THREAD_POOL_NAME = "DubboClientHandler";
     private static final Logger logger = LoggerFactory.getLogger(AbstractClient.class);
+    /**
+     * 同步锁， 在client进行连接，断开，重连接时需要获得该所
+     */
     private final Lock connectLock = new ReentrantLock();
+    /**
+     * 发送数据前，会检查连接是否断开，如果断开，则needReconnect为true，进行重连
+     */
     private final boolean needReconnect;
+    /**
+     * client关联的线程池
+     */
     protected volatile ExecutorService executor;
     private ExecutorRepository executorRepository = ExtensionLoader.getExtensionLoader(ExecutorRepository.class).getDefaultExtension();
 

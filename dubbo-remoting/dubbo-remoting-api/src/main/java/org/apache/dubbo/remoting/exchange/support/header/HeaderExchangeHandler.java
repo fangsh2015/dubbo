@@ -41,6 +41,11 @@ import static org.apache.dubbo.common.constants.CommonConstants.READONLY_EVENT;
 
 /**
  * ExchangeReceiver
+ * 用来处理Dubbo调用的Request/Response 和Telnet调用
+ * 1. 更新发送和读取请求的时间戳
+ * 2.判断请求格式和编解码是否有错， 相应客户端具体的原因
+ * 3. 处理Request请求和Response正常响应
+ * 4. 支持Telnet调用
  */
 public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 

@@ -22,6 +22,7 @@ import org.apache.dubbo.remoting.Dispatcher;
 
 /**
  * In addition to sending all the use thread pool processing
+ * 只在线程池中处理发送事件，其他所有的事件都在IO线程池中处理
  */
 public class ExecutionDispatcher implements Dispatcher {
 

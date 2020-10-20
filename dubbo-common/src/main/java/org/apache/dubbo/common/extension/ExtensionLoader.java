@@ -94,6 +94,10 @@ public class ExtensionLoader<T> {
 
     private final Class<?> type;
 
+    /**
+     * objectFactory用于ExtensionLoader加载具体扩展对象时，查找需要注入的依赖对象
+     * objectFactory指该对象可以获取上线文的任意对象
+     */
     private final ExtensionFactory objectFactory;
 
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<>();
@@ -601,6 +605,12 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 获取扩展类的Adative扩展
+     * Adaptive有两种，一种静态扩展类：需要编码实现， 另一种是动态生成的代理类
+     *
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public T getAdaptiveExtension() {
         Object instance = cachedAdaptiveInstance.get();
@@ -1082,6 +1092,10 @@ public class ExtensionLoader<T> {
         return name.toLowerCase();
     }
 
+    /**
+     * 创建扩展类的Adaptive类
+     * @return
+     */
     @SuppressWarnings("unchecked")
     private T createAdaptiveExtension() {
         try {

@@ -30,6 +30,10 @@ import java.util.stream.Stream;
  */
 public interface Invocation {
 
+    /**
+     * 调用Service的唯一标志
+     * @return
+     */
     String getTargetServiceUniqueName();
 
     /**
@@ -57,7 +61,7 @@ public interface Invocation {
 
     /**
      * get parameter's signature, string representation of parameter types.
-     *
+     * 参数签名的集合
      * @return parameter's signature
      */
     default String[] getCompatibleParamSignatures() {
@@ -76,7 +80,7 @@ public interface Invocation {
 
     /**
      * get attachments.
-     *
+     * 额外的调用参数， 不会传递给Provider
      * @return attachments.
      * @serial
      */

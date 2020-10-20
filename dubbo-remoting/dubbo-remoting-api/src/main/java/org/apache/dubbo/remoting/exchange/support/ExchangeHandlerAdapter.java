@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * ExchangeHandlerAdapter
+ * 请求处理器，用来查找服务方法，并调用。DubboProtocol继承了该类， 实现了服务查找以及方法阿调用的功能
  */
 public abstract class ExchangeHandlerAdapter extends TelnetHandlerAdapter implements ExchangeHandler {
 

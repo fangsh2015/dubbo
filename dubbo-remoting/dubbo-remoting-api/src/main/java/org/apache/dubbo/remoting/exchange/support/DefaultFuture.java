@@ -48,8 +48,13 @@ public class DefaultFuture extends CompletableFuture<Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultFuture.class);
 
+    /**
+     * 请求id与发送请求的cahnnel之间的缓存
+     */
     private static final Map<Long, Channel> CHANNELS = new ConcurrentHashMap<>();
-
+    /**
+     * 请求id与结果DefaultFuture之间的缓存
+     */
     private static final Map<Long, DefaultFuture> FUTURES = new ConcurrentHashMap<>();
 
     public static final Timer TIME_OUT_TIMER = new HashedWheelTimer(
@@ -59,13 +64,30 @@ public class DefaultFuture extends CompletableFuture<Object> {
 
     // invoke id.
     private final Long id;
+    /**
+     * 发送请求的channel
+     */
     private final Channel channel;
+    /**
+     * 发送的请求对象
+     */
     private final Request request;
+    /**
+     * 整个请求-响应交互完成的超时时间
+     */
     private final int timeout;
     private final long start = System.currentTimeMillis();
+    /**
+     * 请求发送的时间
+     */
     private volatile long sent;
+    /**
+     * 定时任务，改任务到期，则表示请求超时
+     */
     private Timeout timeoutCheckTask;
-
+    /**
+     * 请求关联的线程池
+     */
     private ExecutorService executor;
 
     public ExecutorService getExecutor() {
@@ -106,12 +128,14 @@ public class DefaultFuture extends CompletableFuture<Object> {
      */
     public static DefaultFuture newFuture(Channel channel, Request request, int timeout, ExecutorService executor) {
         final DefaultFuture future = new DefaultFuture(channel, request, timeout);
+        // 设置请求的线程池
         future.setExecutor(executor);
         // ThreadlessExecutor needs to hold the waiting future in case of circuit return.
+        // 特殊处理ThreadlessExecutor
         if (executor instanceof ThreadlessExecutor) {
             ((ThreadlessExecutor) executor).setWaitingFuture(future);
         }
-        // timeout check
+        // timeout check， 创建一个定时任务，处理相应超时情况
         timeoutCheck(future);
         return future;
     }
@@ -124,6 +148,11 @@ public class DefaultFuture extends CompletableFuture<Object> {
         return CHANNELS.containsValue(channel);
     }
 
+    /**
+     * 更新请求发送的时间
+     * @param channel
+     * @param request
+     */
     public static void sent(Channel channel, Request request) {
         DefaultFuture future = FUTURES.get(request.getId());
         if (future != null) {

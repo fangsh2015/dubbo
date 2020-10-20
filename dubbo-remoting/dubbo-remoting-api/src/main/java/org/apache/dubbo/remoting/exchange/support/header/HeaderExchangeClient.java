@@ -60,7 +60,9 @@ public class HeaderExchangeClient implements ExchangeClient {
 
         if (startTimer) {
             URL url = client.getUrl();
+            // 开启连接状态检查任务，如发现连接异常，则进行重连
             startReconnectTask(url);
+            // 开启心跳检查任务
             startHeartBeatTask(url);
         }
     }
@@ -191,7 +193,9 @@ public class HeaderExchangeClient implements ExchangeClient {
             AbstractTimerTask.ChannelProvider cp = () -> Collections.singletonList(HeaderExchangeClient.this);
             int heartbeat = getHeartbeat(url);
             long heartbeatTick = calculateLeastDuration(heartbeat);
+            // 创建定时任务
             this.heartBeatTimerTask = new HeartbeatTimerTask(cp, heartbeatTick, heartbeat);
+            // 提交到时间轮中执行
             IDLE_CHECK_TIMER.newTimeout(heartBeatTimerTask, heartbeatTick, TimeUnit.MILLISECONDS);
         }
     }

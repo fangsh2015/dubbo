@@ -63,6 +63,9 @@ public class DubboProtocol extends AbstractProtocol {
     private final ConcurrentMap<String, Object> locks = new ConcurrentHashMap<>();
     private final Set<String> optimizers = new ConcurrentHashSet<>();
 
+    /**
+     * 服务端被调用的过程通过客户端传过来的服务信息查找暴露的服务Invoker，然后调用，并且记录调用的结果
+     */
     private ExchangeHandler requestHandler = new ExchangeHandlerAdapter() {
 
         @Override
@@ -193,6 +196,7 @@ public class DubboProtocol extends AbstractProtocol {
 
     /**
      * 通过客户端调用传入的Invocation找到具体调用的Invoker
+     * 根据端口， 服务接口名， 版本号， 服务分组来查找服务的Invoker
      * @param channel
      * @param inv
      * @return
