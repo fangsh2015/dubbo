@@ -76,21 +76,24 @@ public class DecodeableRpcResult extends AppResponse implements Codec, Decodeabl
             Thread thread = Thread.currentThread();
             log.debug("Decoding in thread -- [" + thread.getName() + "#" + thread.getId() + "]");
         }
-
+        // 1. 通过url查询序列化类型，对返回的参数进行解码
         ObjectInput in = CodecSupport.getSerialization(channel.getUrl(), serializationType)
                 .deserialize(channel.getUrl(), input);
-
+        // 2. 读取标志位
         byte flag = in.readByte();
         switch (flag) {
             case DubboCodec.RESPONSE_NULL_VALUE:
                 break;
             case DubboCodec.RESPONSE_VALUE:
+                // 解析返回的结果参数， 并且将结果值设置到result字段中
                 handleValue(in);
                 break;
             case DubboCodec.RESPONSE_WITH_EXCEPTION:
+                // 解析异常信息 设置到 exception 字段中
                 handleException(in);
                 break;
             case DubboCodec.RESPONSE_NULL_VALUE_WITH_ATTACHMENTS:
+                // 解析Attachment信息 设置到 attachments 字段中
                 handleAttachment(in);
                 break;
             case DubboCodec.RESPONSE_VALUE_WITH_ATTACHMENTS:

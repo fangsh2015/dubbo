@@ -156,6 +156,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     @Override
     public void close(int timeout) {
+        // 引用数量为0后关闭该链接
         if (referenceCount.decrementAndGet() <= 0) {
             if (timeout == 0) {
                 client.close();
@@ -163,7 +164,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
             } else {
                 client.close(timeout);
             }
-
+            // 创建LazyConnectExchangeClient，并将client字段指向该对象
             replaceWithLazyClient();
         }
     }
@@ -193,7 +194,9 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
         /**
          * the order of judgment in the if statement cannot be changed.
          */
+        // 如果当前client字段已经指向了LazyConnectExchangeClient，则不需要再次创建LazyConnectExchangeClient兜底了
         if (!(client instanceof LazyConnectExchangeClient) || client.isClosed()) {
+            // ChannelHandler依旧使用原始ExchangeClient使用的Handler，即DubboProtocol中的requestHandler字段
             client = new LazyConnectExchangeClient(lazyUrl, client.getExchangeHandler());
         }
     }

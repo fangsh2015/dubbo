@@ -70,8 +70,13 @@ public class RpcContext {
             return new RpcContext();
         }
     };
-
+    /**
+     * 上下文的附加信息，会被添加到invocation中传递到远端节点
+     */
     protected final Map<String, Object> attachments = new HashMap<>();
+    /**
+     * 记录上下文键值对信息， 不会被传递到远端节点
+     */
     private final Map<String, Object> values = new HashMap<String, Object>();
 
     private List<URL> urls;
@@ -101,6 +106,9 @@ public class RpcContext {
     // we want these objects to be as generic as possible
     private Object request;
     private Object response;
+    /**
+     * 异步Context， 用来存储异步调用相关的RPCContext以及异步请求相关的Future
+     */
     private AsyncContext asyncContext;
 
     private boolean remove = true;

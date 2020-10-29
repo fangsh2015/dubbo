@@ -55,8 +55,13 @@ public class AsyncRpcResult implements Result {
      */
     private RpcContext storedContext;
     private RpcContext storedServerContext;
+    /**
+     * rpc调用关联的线程池
+     */
     private Executor executor;
-
+    /**
+     * rpc调用关联的invocation对象
+     */
     private Invocation invocation;
 
     private CompletableFuture<AppResponse> responseFuture;
@@ -174,10 +179,13 @@ public class AsyncRpcResult implements Result {
 
     @Override
     public Result get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        // 客户端同步请求阻塞过程
+        // 通过ThreadlessExecutor的waitAndDrain方法阻塞等待响应返回
         if (executor != null && executor instanceof ThreadlessExecutor) {
             ThreadlessExecutor threadlessExecutor = (ThreadlessExecutor) executor;
             threadlessExecutor.waitAndDrain();
         }
+        // 非ThreadlessExecutor线程池场景，代用Future的get方法阻塞等待
         return responseFuture.get(timeout, unit);
     }
 
@@ -191,6 +199,11 @@ public class AsyncRpcResult implements Result {
         return getAppResponse().recreate();
     }
 
+    /**
+     * 为当前请求结果添加回调方法
+     * @param fn
+     * @return
+     */
     public Result whenCompleteWithContext(BiConsumer<Result, Throwable> fn) {
         this.responseFuture = this.responseFuture.whenComplete((v, t) -> {
             beforeContext.accept(v, t);
@@ -287,10 +300,13 @@ public class AsyncRpcResult implements Result {
 
     private RpcContext tmpServerContext;
     private BiConsumer<Result, Throwable> beforeContext = (appResponse, t) -> {
+        // 将线程当前的RPCContext保存在tmpContext变量中
         tmpContext = RpcContext.getContext();
         tmpServerContext = RpcContext.getServerContext();
+        // 将构造函数中设置的RpcContext设置为当前线程的RpcContext
         RpcContext.restoreContext(storedContext);
         RpcContext.restoreServerContext(storedServerContext);
+        // AsyncRpcResult 就可以处于不断地添加回调而不丢失 RpcContext 的状态。总之，AsyncRpcResult 整个就是为异步请求设计的
     };
 
     private BiConsumer<Result, Throwable> afterContext = (appResponse, t) -> {

@@ -28,7 +28,7 @@ public interface ExchangeServer extends RemotingServer {
 
     /**
      * get channels.
-     *
+     *HeaderExchangeHandler
      * @return channels
      */
     Collection<ExchangeChannel> getExchangeChannels();

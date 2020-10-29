@@ -48,11 +48,17 @@ import java.util.function.Function;
 public class AppResponse implements Result {
 
     private static final long serialVersionUID = -6925924956850004727L;
-
+    /**
+     * 服务端响应结果
+     */
     private Object result;
-
+    /**
+     * 服务端返回的异常信息
+     */
     private Throwable exception;
-
+    /**
+     * 服务端返回的附加信息
+     */
     private Map<String, Object> attachments = new HashMap<>();
 
     public AppResponse() {

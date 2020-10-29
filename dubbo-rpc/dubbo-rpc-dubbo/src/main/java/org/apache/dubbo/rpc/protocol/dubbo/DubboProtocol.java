@@ -68,6 +68,13 @@ public class DubboProtocol extends AbstractProtocol {
      */
     private ExchangeHandler requestHandler = new ExchangeHandlerAdapter() {
 
+        /**
+         * 服务端处理请求
+         * @param channel
+         * @param message
+         * @return
+         * @throws RemotingException
+         */
         @Override
         public CompletableFuture<Object> reply(ExchangeChannel channel, Object message) throws RemotingException {
 
@@ -107,6 +114,12 @@ public class DubboProtocol extends AbstractProtocol {
             return result.thenApply(Function.identity());
         }
 
+        /**
+         * 服务端处理oneway请求
+         * @param channel
+         * @param message
+         * @throws RemotingException
+         */
         @Override
         public void received(Channel channel, Object message) throws RemotingException {
             if (message instanceof Invocation) {

@@ -142,11 +142,15 @@ public class InternalThreadLocal<V> {
      * Sets the value for the current thread.
      */
     public final void set(V value) {
+        // 存储的是null，或者是删除对象UNSET，则直接清除当前位置上的对象
         if (value == null || value == InternalThreadLocalMap.UNSET) {
             remove();
         } else {
+            // 获取线程绑定的InternalThreadLocalMap
             InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.get();
+            // 将value值存储到InternalThreadLocalMap中
             if (threadLocalMap.setIndexedVariable(index, value)) {
+                // 将当前InternalThreadLocal记录到待删除集合中
                 addToVariablesToRemove(threadLocalMap, this);
             }
         }
